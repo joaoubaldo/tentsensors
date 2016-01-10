@@ -6,7 +6,7 @@ Description: TentSensors is the software component of a smart greenhouse project
 This code relies on MySensors project and it implements a single node with the following childs:
 
 3x relays
-1x led 
+1x led
 2x DHT temperature & humidity sensors
 */
 
@@ -88,12 +88,12 @@ void requestAllStates() {
   gw.process();
 }
 
-void setup()  
-{ 
+void setup()
+{
   gw.begin(incomingMessage);
-  
-  dht.setup(HUMIDITY_SENSOR_DIGITAL_PIN); 
-  dht2.setup(HUMIDITY_SENSOR_DIGITAL_PIN2); 
+
+  dht.setup(HUMIDITY_SENSOR_DIGITAL_PIN);
+  dht2.setup(HUMIDITY_SENSOR_DIGITAL_PIN2);
 
   gw.sendSketchInfo("TentSensors", VERSION);
 
@@ -107,14 +107,14 @@ void setup()
   gw.present(CHILD_ID_LED, S_LIGHT);
 
   metric = gw.getConfig().isMetric;
-  
+
   setupInitialPinsState();
 
   requestAllStates();
 }
 
 void loop()
-{  
+{
   readHumTemp();
   gw.process();
 }
@@ -147,7 +147,7 @@ void readHumTemp() {
         }
         gw.send(tempMsgs[i]->set(temperature, 1));
       }
-      
+
       float humidity = dhts[i]->getHumidity();
       if (isnan(humidity)) {
       } else {
@@ -156,5 +156,5 @@ void readHumTemp() {
       }
       dhtTimer[i] = millis();
     }
-  }  
+  }
 }
