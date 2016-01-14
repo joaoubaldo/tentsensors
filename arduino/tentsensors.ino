@@ -15,7 +15,7 @@ This code relies on MySensors project and it implements a single node with the f
 #include <MySensor.h>
 #include <DHT.h>
 
-#define VERSION "2.1"
+#include "version.h"
 
 /* IDs */
 #define CHILD_ID_HUM 10
@@ -52,11 +52,14 @@ MyMessage msgLed(CHILD_ID_LED, V_LIGHT);
 
 /* Control variables */
 unsigned long dhtTimer[2] = {0, 0};  // used to control read frequency
+unsigned long resetInterval = 7200000;
+unsigned long lastStateRefresh = 0;
 float lastTemp[2];
 float lastHum[2];
 MyMessage * humMsgs[2] = {&msgHum, &msgHum2};
 MyMessage * tempMsgs[2] = {&msgTemp, &msgTemp2};
 DHT * dhts[2] = {&dht, &dht2};
+unsigned long stateRefreshInterval = 10000;
 
 void setupInitialPinsState() {
   pinMode(RELAY1_PIN, OUTPUT);
@@ -68,24 +71,20 @@ void setupInitialPinsState() {
 
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, LOW);
-
 }
 
 void requestAllStates() {
-  /* HACK bellow */
-  delay(50);
-  gw.request(CHILD_ID_RELAY1, V_LIGHT);
-  delay(50);
-  gw.process();
-  gw.request(CHILD_ID_RELAY2, V_LIGHT);
-  delay(50);
-  gw.process();
-  gw.request(CHILD_ID_RELAY3, V_LIGHT);
-  delay(50);
-  gw.process();
-  gw.request(CHILD_ID_LED, V_LIGHT);
-  delay(50);
-  gw.process();
+  if ((millis() - lastStateRefresh) >= stateRefreshInterval) {
+    gw.request(CHILD_ID_RELAY1, V_LIGHT);
+    delay(50);
+    gw.request(CHILD_ID_RELAY2, V_LIGHT);
+    delay(50);
+    gw.request(CHILD_ID_RELAY3, V_LIGHT);
+    delay(50);
+    gw.request(CHILD_ID_LED, V_LIGHT);
+    delay(50);
+    lastStateRefresh = millis();
+  }
 }
 
 void setup()
@@ -109,12 +108,14 @@ void setup()
   metric = gw.getConfig().isMetric;
 
   setupInitialPinsState();
-
-  requestAllStates();
 }
 
 void loop()
 {
+  if ( millis() >= resetInterval ) {
+    asm volatile ("  jmp 0");
+  }
+  requestAllStates();
   readHumTemp();
   gw.process();
 }
@@ -139,6 +140,7 @@ void readHumTemp() {
   for (int i = 0; i < 2; i++) {
     if ((millis() - dhtTimer[i]) >= dhts[i]->getMinimumSamplingPeriod()) {
       float temperature = dhts[i]->getTemperature();
+      float humidity = dhts[i]->getHumidity();  // this wont actually read again from sensor
       if (isnan(temperature)) {
       } else {
         lastTemp[i] = temperature;
@@ -148,7 +150,6 @@ void readHumTemp() {
         gw.send(tempMsgs[i]->set(temperature, 1));
       }
 
-      float humidity = dhts[i]->getHumidity();
       if (isnan(humidity)) {
       } else {
           lastHum[i] = humidity;

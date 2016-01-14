@@ -24,7 +24,7 @@ function time_since_update(device)
   return difference
 end
 
--- split str into a table based on token
+-- split str with token, into a table
 function string_split(str, token)
   local res = {}
   local c = 0
@@ -37,6 +37,7 @@ function string_split(str, token)
   return res
 end
 
+-- get device that triggered script execution
 function device_that_triggered_script()
   local device = ""
 
@@ -68,9 +69,9 @@ function toggle_every_x_seconds(device, x)
     else
       commandArray[device] = 'Off'
     end
+    print(device.." was "..commandArray[device].." for "..value.." seconds")
   end
 end
-
 
 --
 -- Vars
@@ -84,28 +85,64 @@ LED = 'LED'
 Fan = 'Fan'
 Resistor = 'Resistor'
 Extractor = 'Extractor'
+ResistorAlwaysOn = true
 
+-- run logic
+function run_logic()
 
---
--- Logic
---
-toggle_every_x_seconds(Fan, 180)
-turn_on_every_x_for_y(Extractor, 600, 120)
-
--- toggle resistor based on x and y temperatures
-x = 30.0
-y = 32.0
-if (otherdevices_temperature[TempHumBottom] >= y) then
-  if otherdevices[Resistor] == 'On' then
-    commandArray[Resistor] = 'Off'
-    print("Turned "..commandArray[Resistor].." Resistor")
+  -- toggle resistor based on x and y temperatures
+  if ResistorAlwaysOn then
+    if otherdevices[Resistor] == 'Off' then
+      commandArray[Resistor] = 'On'
+      print("Resistor is forced to be On")
+    end
+  else
+    x = 29.7
+    y = 30.0
+    value = otherdevices_temperature[TempHumBottom]
+    if (value >= y) then
+      if otherdevices[Resistor] == 'On' then
+        commandArray[Resistor] = 'Off'
+        print("Turned Off Resistor, value:"..value)
+      end
+    elseif (value <= x) then
+      if otherdevices[Resistor] == 'Off' then
+        commandArray[Resistor] = 'On'
+        print("Turned On Resistor, value:"..value)
+      end
+    end
   end
-elseif (otherdevices_temperature[TempHumBottom] <= x) then
-  if otherdevices[Resistor] == 'Off' then
-    commandArray[Resistor] = 'On'
-    print("Turned "..commandArray[Resistor].." Resistor")
+
+  -- turn fan if temp is a high already
+  x = 30.0
+  y = 29.8
+  value = otherdevices_temperature[TempHumBottom]
+  if value >= x then
+    if otherdevices[Fan] == 'Off' then
+      commandArray[Fan] = 'On'
+      print("Turned On Fan, value:"..value)
+    end
+    if otherdevices[Extractor] == 'Off' then
+      commandArray[Extractor] = 'On'
+      print("Turned On Extractor, value:"..value)
+    end
+  elseif value <= y then
+    if otherdevices[Fan] == 'Off' then
+      toggle_every_x_seconds(Fan, 600)
+    else
+      commandArray[Fan] = 'Off'
+      print("Turned Off Fan, value:"..value)
+    end
+
+    if otherdevices[Extractor] == 'Off' then
+      turn_on_every_x_for_y(Extractor, 1200, 240)
+    else
+      commandArray[Extractor] = 'Off'
+      print("Turned Off Extractor, value:"..value)
+    end
   end
+
+  return commandArray
 end
 
-
-return commandArray
+run_logic()
