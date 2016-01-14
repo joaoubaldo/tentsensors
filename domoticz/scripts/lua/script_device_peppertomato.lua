@@ -141,7 +141,7 @@ function run_logic()
       print("Turned Off Extractor, value:"..value)
     end
   end
-
+  
   return commandArray
 end
 
