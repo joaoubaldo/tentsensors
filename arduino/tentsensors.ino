@@ -10,12 +10,14 @@ This code relies on MySensors project and it implements a single node with the f
 2x DHT temperature & humidity sensors
 */
 
-#include <SPI.h>
+#define MY_GATEWAY_SERIAL
 
+#include <SPI.h>
 #include <MySensor.h>
 #include <DHT.h>
 
 #include "version.h"
+
 
 /* IDs */
 #define CHILD_ID_HUM 10
@@ -35,7 +37,6 @@ This code relies on MySensors project and it implements a single node with the f
 #define RELAY2_PIN 7
 #define RELAY3_PIN 8
 
-MySensor gw;
 DHT dht;
 DHT dht2;
 boolean metric = true;
@@ -79,13 +80,13 @@ void setupInitialPinsState() {
 
 void requestAllStates() {
   if ((millis() - lastStateRefresh) >= stateRefreshInterval) {
-    gw.request(CHILD_ID_RELAY1, V_LIGHT);
+    request(CHILD_ID_RELAY1, V_LIGHT);
     delay(50);
-    gw.request(CHILD_ID_RELAY2, V_LIGHT);
+    request(CHILD_ID_RELAY2, V_LIGHT);
     delay(50);
-    gw.request(CHILD_ID_RELAY3, V_LIGHT);
+    request(CHILD_ID_RELAY3, V_LIGHT);
     delay(50);
-    gw.request(CHILD_ID_LED, V_LIGHT);
+    request(CHILD_ID_LED, V_LIGHT);
     delay(50);
     lastStateRefresh = millis();
   }
@@ -93,25 +94,26 @@ void requestAllStates() {
 
 void setup()
 {
-  gw.begin(incomingMessage);
-
   dht.setup(HUMIDITY_SENSOR_DIGITAL_PIN);
   dht2.setup(HUMIDITY_SENSOR_DIGITAL_PIN2);
 
-  gw.sendSketchInfo("TentSensors", VERSION);
-
-  gw.present(CHILD_ID_HUM, S_HUM);
-  gw.present(CHILD_ID_TEMP, S_TEMP);
-  gw.present(CHILD_ID_HUM2, S_HUM);
-  gw.present(CHILD_ID_TEMP2, S_TEMP);
-  gw.present(CHILD_ID_RELAY1, S_LIGHT);
-  gw.present(CHILD_ID_RELAY2, S_LIGHT);
-  gw.present(CHILD_ID_RELAY3, S_LIGHT);
-  gw.present(CHILD_ID_LED, S_LIGHT);
-
-  metric = gw.getConfig().isMetric;
-
   setupInitialPinsState();
+}
+
+void presentation() {
+  sendSketchInfo("TentSensors", VERSION);
+
+  present(CHILD_ID_HUM, S_HUM);
+  present(CHILD_ID_TEMP, S_TEMP);
+  present(CHILD_ID_HUM2, S_HUM);
+  present(CHILD_ID_TEMP2, S_TEMP);
+  present(CHILD_ID_RELAY1, S_LIGHT);
+  present(CHILD_ID_RELAY2, S_LIGHT);
+  present(CHILD_ID_RELAY3, S_LIGHT);
+  present(CHILD_ID_LED, S_LIGHT);
+
+  metric = getConfig().isMetric;
+  
 }
 
 void loop()
@@ -126,31 +128,23 @@ void loop()
 
   requestAllStates();
   readHumTemp();
-  gw.process();
 }
 
-void incomingMessage(const MyMessage & message) {
+void receive(const MyMessage & message) {
   //Serial.println("INCOMING MESSAGE");
   if (message.type == V_LIGHT && message.sensor == CHILD_ID_RELAY1) {
     digitalWrite(RELAY1_PIN, !message.getBool());
-    gw.send(msgRelay1.set(message.getBool() ? 1:0));
+    send(msgRelay1.set(message.getBool() ? 1:0));
   } else if (message.type == V_LIGHT && message.sensor == CHILD_ID_RELAY2) {
     digitalWrite(RELAY2_PIN, !message.getBool());
-    gw.send(msgRelay2.set(message.getBool() ? 1:0));
+    send(msgRelay2.set(message.getBool() ? 1:0));
   } else if (message.type == V_LIGHT && message.sensor == CHILD_ID_RELAY3) {
     digitalWrite(RELAY3_PIN, !message.getBool());
-    gw.send(msgRelay3.set(message.getBool() ? 1:0));
+    send(msgRelay3.set(message.getBool() ? 1:0));
   } else if (message.type == V_LIGHT && message.sensor == CHILD_ID_LED) {
     digitalWrite(LED_PIN, message.getBool());
-    gw.send(msgLed.set(message.getBool() ? 1:0));
+    send(msgLed.set(message.getBool() ? 1:0));
   }
-}
-
-int freeRam ()
-{
-  extern int __heap_start, *__brkval;
-  int v;
-  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
 }
 
 void readHumTemp() {
@@ -164,7 +158,7 @@ void readHumTemp() {
         if (!metric) {
           temperature = dhts[i]->toFahrenheit(temperature);
         }
-        if (!gw.send(tempMsgs[i]->set(temperature, 1)))
+        if (!send(tempMsgs[i]->set(temperature, 1)))
           sendFailCount++;
         //Serial.print("Free SRAM: ");
         //Serial.println(freeRam(), DEC);
@@ -174,8 +168,8 @@ void readHumTemp() {
       } else {
           lastHum[i] = humidity;
 
-          gw.wait(100);
-          if (!gw.send(humMsgs[i]->set(humidity, 1)))
+          wait(100);
+          if (!send(humMsgs[i]->set(humidity, 1)))
             sendFailCount++;
       }
 
