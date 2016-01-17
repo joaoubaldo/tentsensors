@@ -60,6 +60,10 @@ MyMessage * humMsgs[2] = {&msgHum, &msgHum2};
 MyMessage * tempMsgs[2] = {&msgTemp, &msgTemp2};
 DHT * dhts[2] = {&dht, &dht2};
 unsigned long stateRefreshInterval = 10000;
+unsigned int dhtReadInterval = 5000;
+int sendFailCount = 0;
+int lastSendFailCount = 0;
+unsigned long lastSendFailTimer = 0;
 
 void setupInitialPinsState() {
   pinMode(RELAY1_PIN, OUTPUT);
@@ -112,15 +116,21 @@ void setup()
 
 void loop()
 {
-  if ( millis() >= resetInterval ) {
-    asm volatile ("  jmp 0");
+  if (millis() - lastSendFailTimer > 10000) {
+    if (sendFailCount - lastSendFailCount > 5) {
+      asm volatile ("  jmp 0");
+    }
+    lastSendFailCount = sendFailCount;
+    lastSendFailTimer = millis();
   }
+
   requestAllStates();
   readHumTemp();
   gw.process();
 }
 
 void incomingMessage(const MyMessage & message) {
+  //Serial.println("INCOMING MESSAGE");
   if (message.type == V_LIGHT && message.sensor == CHILD_ID_RELAY1) {
     digitalWrite(RELAY1_PIN, !message.getBool());
     gw.send(msgRelay1.set(message.getBool() ? 1:0));
@@ -136,9 +146,16 @@ void incomingMessage(const MyMessage & message) {
   }
 }
 
+int freeRam ()
+{
+  extern int __heap_start, *__brkval;
+  int v;
+  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
+}
+
 void readHumTemp() {
   for (int i = 0; i < 2; i++) {
-    if ((millis() - dhtTimer[i]) >= dhts[i]->getMinimumSamplingPeriod()) {
+    if ((millis() - dhtTimer[i]) >= dhtReadInterval) {
       float temperature = dhts[i]->getTemperature();
       float humidity = dhts[i]->getHumidity();  // this wont actually read again from sensor
       if (isnan(temperature)) {
@@ -147,14 +164,23 @@ void readHumTemp() {
         if (!metric) {
           temperature = dhts[i]->toFahrenheit(temperature);
         }
-        gw.send(tempMsgs[i]->set(temperature, 1));
+        if (!gw.send(tempMsgs[i]->set(temperature, 1)))
+          sendFailCount++;
+        //Serial.print("Free SRAM: ");
+        //Serial.println(freeRam(), DEC);
       }
 
       if (isnan(humidity)) {
       } else {
           lastHum[i] = humidity;
-          gw.send(humMsgs[i]->set(humidity, 1));
+
+          gw.wait(100);
+          if (!gw.send(humMsgs[i]->set(humidity, 1)))
+            sendFailCount++;
       }
+
+      //Serial.print("sendFailCount: ");
+      //Serial.println(sendFailCount);
       dhtTimer[i] = millis();
     }
   }
