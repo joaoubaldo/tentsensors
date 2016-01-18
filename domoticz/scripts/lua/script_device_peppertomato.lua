@@ -73,6 +73,8 @@ function toggle_every_x_seconds(device, x)
   end
 end
 
+-- LOGIC STARTS HERE
+
 --
 -- Vars
 --
@@ -85,11 +87,17 @@ LED = 'LED'
 Fan = 'Fan'
 Resistor = 'Resistor'
 Extractor = 'Extractor'
+-- When this virtual switch is Off, automatic control logic is disabled.
+AutoControl = 'AutoControl'
+
 ResistorAlwaysOn = true
+HighTemp = 30.5
+LowTemp = 29.8
 
 -- run logic
 function run_logic()
 
+  -- RESISTOR
   -- toggle resistor based on x and y temperatures
   if ResistorAlwaysOn then
     if otherdevices[Resistor] == 'Off' then
@@ -97,8 +105,9 @@ function run_logic()
       print("Resistor is forced to be On")
     end
   else
-    x = 29.7
-    y = 30.0
+    x = HighTemp
+    y = LowTemp
+
     value = otherdevices_temperature[TempHumBottom]
     if (value >= y) then
       if otherdevices[Resistor] == 'On' then
@@ -113,9 +122,10 @@ function run_logic()
     end
   end
 
+  -- FAN and EXTRACTOR
   -- turn fan if temp is a high already
-  x = 30.0
-  y = 29.8
+  x = HighTemp
+  y = LowTemp
   value = otherdevices_temperature[TempHumBottom]
   if value >= x then
     if otherdevices[Fan] == 'Off' then
@@ -141,8 +151,10 @@ function run_logic()
       print("Turned Off Extractor, value:"..value)
     end
   end
-  
+
   return commandArray
 end
 
-run_logic()
+if otherdevices[AutoControl] == 'On' then
+  run_logic()
+end

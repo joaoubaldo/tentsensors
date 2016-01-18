@@ -2,9 +2,10 @@
 Title: TentSensors
 Author: Joao Coutinho <me joaoubaldo.com>
 Git: https://github.com/joaoubaldo/tentsensors
-Description: TentSensors is the software component of a smart greenhouse project.
-This code relies on MySensors project and it implements a single node with the following childs:
 
+Description: TentSensors is the software component of a smart greenhouse
+project. The code relies on MySensors library and implements a local
+Gateway and Sensor Node (no radio needed) with the following childs:
 3x relays
 1x led
 2x DHT temperature & humidity sensors
@@ -17,7 +18,6 @@ This code relies on MySensors project and it implements a single node with the f
 #include <DHT.h>
 
 #include "version.h"
-
 
 /* IDs */
 #define CHILD_ID_HUM 10
@@ -92,8 +92,7 @@ void requestAllStates() {
   }
 }
 
-void setup()
-{
+void setup() {
   dht.setup(HUMIDITY_SENSOR_DIGITAL_PIN);
   dht2.setup(HUMIDITY_SENSOR_DIGITAL_PIN2);
 
@@ -113,11 +112,9 @@ void presentation() {
   present(CHILD_ID_LED, S_LIGHT);
 
   metric = getConfig().isMetric;
-  
 }
 
-void loop()
-{
+void loop() {
   if (millis() - lastSendFailTimer > 10000) {
     if (sendFailCount - lastSendFailCount > 5) {
       asm volatile ("  jmp 0");
