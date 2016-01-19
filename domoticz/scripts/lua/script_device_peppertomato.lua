@@ -2,6 +2,22 @@
 -- Temperature, humidity and barometer values for other devices can be found in otherdevices_temperature['yourdevice'],otherdevices_humidity['yourdevice'] and otherdevices_barometer['yourdevice'] tables.
 -- To modify an otherdevice value, you should use commandArray['UpdateDevice']='idx|nValue|sValue' where idx is the device index, nValue and sValue the values to modify (see json page for details - Domoticz API/JSON URL's)
 
+
+--
+-- Vars
+--
+commandArray = {}
+
+TempHumBottom = 'TempHumBottom'
+TempHumMiddle = 'TempHumMiddle'
+
+LED = 'LED'
+Fan = 'Fan'
+Resistor = 'Resistor'
+Extractor = 'Extractor'
+ResistorAlwaysOn = true
+AutoControl = 'AutoControl'
+
 --
 -- Utility functions
 --
@@ -73,84 +89,57 @@ function toggle_every_x_seconds(device, x)
   end
 end
 
--- LOGIC STARTS HERE
-
---
--- Vars
---
-commandArray = {}
-
-TempHumBottom = 'TempHumBottom'
-TempHumMiddle = 'TempHumMiddle'
-
-LED = 'LED'
-Fan = 'Fan'
-Resistor = 'Resistor'
-Extractor = 'Extractor'
--- When this virtual switch is Off, automatic control logic is disabled.
-AutoControl = 'AutoControl'
-
-ResistorAlwaysOn = true
-HighTemp = 30.5
-LowTemp = 29.8
-
 -- run logic
 function run_logic()
 
-  -- RESISTOR
   -- toggle resistor based on x and y temperatures
   if ResistorAlwaysOn then
     if otherdevices[Resistor] == 'Off' then
       commandArray[Resistor] = 'On'
-      print("Resistor is forced to be On")
     end
   else
-    x = HighTemp
-    y = LowTemp
-
+    x = 29.7
+    y = 30.0
     value = otherdevices_temperature[TempHumBottom]
     if (value >= y) then
       if otherdevices[Resistor] == 'On' then
         commandArray[Resistor] = 'Off'
-        print("Turned Off Resistor, value:"..value)
       end
     elseif (value <= x) then
       if otherdevices[Resistor] == 'Off' then
         commandArray[Resistor] = 'On'
-        print("Turned On Resistor, value:"..value)
       end
     end
   end
 
-  -- FAN and EXTRACTOR
-  -- turn fan if temp is a high already
-  x = HighTemp
-  y = LowTemp
+
+  -- 1. if enough time has passed, toggle devices
+  toggle_every_x_seconds(Fan, 600)
+  turn_on_every_x_for_y(Extractor, 1200, 240)
+
+  -- 2. turn fan if temp is a high already (override)
+  x = 30.0
+  y = 29.8
   value = otherdevices_temperature[TempHumBottom]
   if value >= x then
     if otherdevices[Fan] == 'Off' then
       commandArray[Fan] = 'On'
-      print("Turned On Fan, value:"..value)
     end
     if otherdevices[Extractor] == 'Off' then
       commandArray[Extractor] = 'On'
-      print("Turned On Extractor, value:"..value)
     end
   elseif value <= y then
-    if otherdevices[Fan] == 'Off' then
-      toggle_every_x_seconds(Fan, 600)
-    else
+    if otherdevices[Fan] == 'On' then
       commandArray[Fan] = 'Off'
-      print("Turned Off Fan, value:"..value)
     end
 
-    if otherdevices[Extractor] == 'Off' then
-      turn_on_every_x_for_y(Extractor, 1200, 240)
-    else
+    if otherdevices[Extractor] == 'On' then
       commandArray[Extractor] = 'Off'
-      print("Turned Off Extractor, value:"..value)
     end
   end
+
+  -- print commands
+  for key,value in pairs(commandArray) do print(key..": "..value) end
 
   return commandArray
 end
