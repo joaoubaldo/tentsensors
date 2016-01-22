@@ -79,17 +79,13 @@ void setupInitialPinsState() {
 }
 
 void requestAllStates() {
-  if ((millis() - lastStateRefresh) >= stateRefreshInterval) {
+  //if ((millis() - lastStateRefresh) >= stateRefreshInterval) {
     request(CHILD_ID_RELAY1, V_LIGHT);
-    delay(50);
     request(CHILD_ID_RELAY2, V_LIGHT);
-    delay(50);
     request(CHILD_ID_RELAY3, V_LIGHT);
-    delay(50);
     request(CHILD_ID_LED, V_LIGHT);
-    delay(50);
     lastStateRefresh = millis();
-  }
+  //}
 }
 
 void setup() {
@@ -112,6 +108,9 @@ void presentation() {
   present(CHILD_ID_LED, S_LIGHT);
 
   metric = getConfig().isMetric;
+  wait(2000);
+  requestAllStates();
+  wait(2000);
 }
 
 void loop() {
@@ -123,7 +122,7 @@ void loop() {
     lastSendFailTimer = millis();
   }
 
-  requestAllStates();
+  //requestAllStates();
   readHumTemp();
 }
 
