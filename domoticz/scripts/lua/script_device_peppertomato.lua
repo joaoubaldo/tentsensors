@@ -1,8 +1,3 @@
--- Just for reference:
--- Temperature, humidity and barometer values for other devices can be found in otherdevices_temperature['yourdevice'],otherdevices_humidity['yourdevice'] and otherdevices_barometer['yourdevice'] tables.
--- To modify an otherdevice value, you should use commandArray['UpdateDevice']='idx|nValue|sValue' where idx is the device index, nValue and sValue the values to modify (see json page for details - Domoticz API/JSON URL's)
-
-
 --
 -- Vars
 --
@@ -15,8 +10,9 @@ LED = 'LED'
 Fan = 'Fan'
 Resistor = 'Resistor'
 Extractor = 'Extractor'
-ResistorAlwaysOn = true
 AutoControl = 'AutoControl'
+HPS = 'HPS'
+ResistorAlwaysOn = false
 
 --
 -- Utility functions
@@ -92,14 +88,15 @@ end
 -- run logic
 function run_logic()
 
-  -- toggle resistor based on x and y temperatures
+  -- toggle resistor based temperature
+  value = otherdevices_temperature[TempHumBottom]
   if ResistorAlwaysOn then
     if otherdevices[Resistor] == 'Off' then
       commandArray[Resistor] = 'On'
     end
   else
-    x = 29.7
-    y = 30.0
+    x = 30.2
+    y = 32.0
     value = otherdevices_temperature[TempHumBottom]
     if (value >= y) then
       if otherdevices[Resistor] == 'On' then
@@ -112,13 +109,9 @@ function run_logic()
     end
   end
 
-
-  -- 1. if enough time has passed, toggle devices
-  toggle_every_x_seconds(Fan, 600)
-  turn_on_every_x_for_y(Extractor, 1200, 240)
-
-  -- 2. turn fan if temp is a high already (override)
-  x = 30.0
+  -- toggle air intake/outtake if temp is high/low
+  -- if temp is between x and y, toggle air every n seconds
+  x = 30.5
   y = 29.8
   value = otherdevices_temperature[TempHumBottom]
   if value >= x then
@@ -138,12 +131,28 @@ function run_logic()
     end
   end
 
+  -- day and night
+  hour = os.date("*t")["hour"]
+  x = 18
+  y = 9
+  if x > y then
+    if otherdevices[HPS] == 'Off' and (hour >= x or hour < y) then
+      commandArray[HPS] = 'On'
+    elseif otherdevices[HPS] == 'On' and hour >= y and hour < x then
+      commandArray[HPS] = 'Off'
+    end
+  elseif y > x then
+    -- TODO: Not implemented
+  end
+
   -- print commands
   for key,value in pairs(commandArray) do print(key..": "..value) end
 
   return commandArray
 end
 
+-- check if we want to run all this script logic
 if otherdevices[AutoControl] == 'On' then
   run_logic()
 end
+

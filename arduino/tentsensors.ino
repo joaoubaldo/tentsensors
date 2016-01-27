@@ -28,14 +28,16 @@ Gateway and Sensor Node (no radio needed) with the following childs:
 #define CHILD_ID_RELAY2 15
 #define CHILD_ID_RELAY3 16
 #define CHILD_ID_LED 17
+#define CHILD_ID_RELAY4 18
 
 /* Pins */
-#define HUMIDITY_SENSOR_DIGITAL_PIN 3
-#define HUMIDITY_SENSOR_DIGITAL_PIN2 4
+#define HUMIDITY_SENSOR_DIGITAL_PIN 4
+#define HUMIDITY_SENSOR_DIGITAL_PIN2 3
 #define LED_PIN 5
 #define RELAY1_PIN 6
 #define RELAY2_PIN 7
 #define RELAY3_PIN 8
+#define RELAY4_PIN 9
 
 DHT dht;
 DHT dht2;
@@ -49,6 +51,7 @@ MyMessage msgTemp2(CHILD_ID_TEMP2, V_TEMP);
 MyMessage msgRelay1(CHILD_ID_RELAY1, V_LIGHT);
 MyMessage msgRelay2(CHILD_ID_RELAY2, V_LIGHT);
 MyMessage msgRelay3(CHILD_ID_RELAY3, V_LIGHT);
+MyMessage msgRelay4(CHILD_ID_RELAY4, V_LIGHT);
 MyMessage msgLed(CHILD_ID_LED, V_LIGHT);
 
 /* Control variables */
@@ -73,6 +76,8 @@ void setupInitialPinsState() {
   digitalWrite(RELAY2_PIN, HIGH);
   pinMode(RELAY3_PIN, OUTPUT);
   digitalWrite(RELAY3_PIN, HIGH);
+  pinMode(RELAY4_PIN, OUTPUT);
+  digitalWrite(RELAY4_PIN, HIGH);
 
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, LOW);
@@ -83,6 +88,7 @@ void requestAllStates() {
     request(CHILD_ID_RELAY1, V_LIGHT);
     request(CHILD_ID_RELAY2, V_LIGHT);
     request(CHILD_ID_RELAY3, V_LIGHT);
+    request(CHILD_ID_RELAY4, V_LIGHT);
     request(CHILD_ID_LED, V_LIGHT);
     lastStateRefresh = millis();
   //}
@@ -105,6 +111,7 @@ void presentation() {
   present(CHILD_ID_RELAY1, S_LIGHT);
   present(CHILD_ID_RELAY2, S_LIGHT);
   present(CHILD_ID_RELAY3, S_LIGHT);
+  present(CHILD_ID_RELAY4, S_LIGHT);
   present(CHILD_ID_LED, S_LIGHT);
 
   metric = getConfig().isMetric;
@@ -137,6 +144,9 @@ void receive(const MyMessage & message) {
   } else if (message.type == V_LIGHT && message.sensor == CHILD_ID_RELAY3) {
     digitalWrite(RELAY3_PIN, !message.getBool());
     send(msgRelay3.set(message.getBool() ? 1:0));
+  } else if (message.type == V_LIGHT && message.sensor == CHILD_ID_RELAY4) {
+    digitalWrite(RELAY4_PIN, !message.getBool());
+    send(msgRelay4.set(message.getBool() ? 1:0));
   } else if (message.type == V_LIGHT && message.sensor == CHILD_ID_LED) {
     digitalWrite(LED_PIN, message.getBool());
     send(msgLed.set(message.getBool() ? 1:0));
