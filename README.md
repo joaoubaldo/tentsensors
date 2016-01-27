@@ -5,7 +5,7 @@
 TentSensors is the software component of a smart greenhouse project.
 This code relies on MySensors project and it implements a single node with the following childs:
 
-* 3x relays
+* 4x relays
 * 1x led 
 * 2x DHT temperature & humidity sensors
 
