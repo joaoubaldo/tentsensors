@@ -14,6 +14,9 @@ AutoControl = 'AutoControl'
 HPS = 'HPS'
 ResistorAlwaysOn = false
 
+DayStart = 17
+DayEnd = 10
+
 --
 -- Utility functions
 --
@@ -47,6 +50,20 @@ function string_split(str, token)
   end
 
   return res
+end
+
+-- turn device off
+function turn_off(device)
+  if otherdevices[device] == 'On' then
+	commandArray[device] = 'Off'
+  end
+end
+
+-- turn device on
+function turn_on(device)
+  if otherdevices[device] == 'Off' then
+	commandArray[device] = 'On'
+  end
 end
 
 -- get device that triggered script execution
@@ -87,67 +104,52 @@ end
 
 -- run logic
 function run_logic()
+  tempBot = otherdevices_temperature[TempHumBottom]
 
-  -- toggle resistor based temperature
-  value = otherdevices_temperature[TempHumBottom]
+  -- toggle resistor based on temperature
   if ResistorAlwaysOn then
-    if otherdevices[Resistor] == 'Off' then
-      commandArray[Resistor] = 'On'
-    end
+	turn_on(Resistor)
   else
     x = 30.2
     y = 32.0
-    value = otherdevices_temperature[TempHumBottom]
-    if (value >= y) then
-      if otherdevices[Resistor] == 'On' then
-        commandArray[Resistor] = 'Off'
-      end
-    elseif (value <= x) then
-      if otherdevices[Resistor] == 'Off' then
-        commandArray[Resistor] = 'On'
-      end
+    if (tempBot >= y) then
+      turn_off(Resistor)
+    elseif (tempBot <= x) then
+      turn_on(Resistor)
     end
   end
 
   -- toggle air intake/outtake if temp is high/low
-  -- if temp is between x and y, toggle air every n seconds
-  x = 30.5
-  y = 29.8
-  value = otherdevices_temperature[TempHumBottom]
-  if value >= x then
-    if otherdevices[Fan] == 'Off' then
-      commandArray[Fan] = 'On'
-    end
-    if otherdevices[Extractor] == 'Off' then
-      commandArray[Extractor] = 'On'
-    end
-  elseif value <= y then
-    if otherdevices[Fan] == 'On' then
-      commandArray[Fan] = 'Off'
-    end
-
-    if otherdevices[Extractor] == 'On' then
-      commandArray[Extractor] = 'Off'
-    end
+  high = 29.0
+  low = 26.8
+  if false then
+	  if tempBot >= high then
+		turn_on(Fan)
+		turn_on(Extractor)
+	  elseif tempBot <= low then
+		turn_off(Fan)
+		turn_off(Extractor)
+	  end
   end
 
-  -- day and night
+  -- toggle air flow based on time of day
   hour = os.date("*t")["hour"]
-  x = 18
-  y = 9
-  if x > y then
-    if otherdevices[HPS] == 'Off' and (hour >= x or hour < y) then
-      commandArray[HPS] = 'On'
-    elseif otherdevices[HPS] == 'On' and hour >= y and hour < x then
-      commandArray[HPS] = 'Off'
+  if DayStart > DayEnd then
+    if (hour >= DayStart or hour < DayEnd) then
+      -- day
+      turn_on_every_x_for_y(Fan, 560, 3600)
+      turn_on_every_x_for_y(Extractor, 1500, 1500)
+      turn_on(HPS)
+    elseif hour >= DayEnd and hour < DayStart then  
+      -- night
+      turn_off(HPS)
+      turn_on_every_x_for_y(Extractor, 3600, 300)
+      turn_on_every_x_for_y(Fan, 3600, 120)
     end
-  elseif y > x then
-    -- TODO: Not implemented
   end
 
   -- print commands
   for key,value in pairs(commandArray) do print(key..": "..value) end
-
   return commandArray
 end
 
