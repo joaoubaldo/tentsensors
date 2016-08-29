@@ -3,8 +3,8 @@
 --
 commandArray = {}
 
-TempHumBottom = 'TempHumBottom'
-TempHumMiddle = 'TempHumMiddle'
+TempHumOutside = 'TempHumOutside'
+TempHumInside = 'TempHumInside'
 
 LED = 'LED'
 Fan = 'Fan'
@@ -13,6 +13,7 @@ Extractor = 'Extractor'
 AutoControl = 'AutoControl'
 HPS = 'HPS'
 ResistorAlwaysOn = false
+FanAlwaysOnDay = false
 
 DayStart = 17
 DayEnd = 10
@@ -104,52 +105,55 @@ end
 
 -- run logic
 function run_logic()
-  tempBot = otherdevices_temperature[TempHumBottom]
+  temp = otherdevices_temperature[TempHumInside]
 
   -- toggle resistor based on temperature
   if ResistorAlwaysOn then
 	turn_on(Resistor)
   else
-    x = 30.2
-    y = 32.0
-    if (tempBot >= y) then
+    x = 28.0
+    y = 30.0
+    if (temp >= y) then
       turn_off(Resistor)
-    elseif (tempBot <= x) then
+    elseif (temp <= x) then
       turn_on(Resistor)
     end
   end
 
-  -- toggle air intake/outtake if temp is high/low
-  high = 29.0
-  low = 26.8
-  if false then
-	  if tempBot >= high then
-		turn_on(Fan)
-		turn_on(Extractor)
-	  elseif tempBot <= low then
-		turn_off(Fan)
-		turn_off(Extractor)
-	  end
-  end
 
   -- toggle air flow based on time of day
   hour = os.date("*t")["hour"]
   if DayStart > DayEnd then
     if (hour >= DayStart or hour < DayEnd) then
       -- day
-      turn_on_every_x_for_y(Fan, 560, 3600)
-      turn_on_every_x_for_y(Extractor, 1500, 1500)
+      if FanAlwaysOnDay then
+        turn_on(Fan)
+      else
+        turn_on_every_x_for_y(Fan, 3600, 330)
+      end
+      turn_on_every_x_for_y(Extractor, 3600, 2000)
       turn_on(HPS)
     elseif hour >= DayEnd and hour < DayStart then  
       -- night
       turn_off(HPS)
-      turn_on_every_x_for_y(Extractor, 3600, 300)
+      turn_on_every_x_for_y(Extractor, 3600, 1000)
       turn_on_every_x_for_y(Fan, 3600, 120)
     end
   end
 
+
+  -- toggle air intake/outtake if temp is high/low
+  high = 32.0
+  low = 30.0
+  if true then
+          if temp >= high then
+            -- turn_on(Fan)
+            turn_on(Extractor)
+          end
+  end
+
   -- print commands
-  for key,value in pairs(commandArray) do print(key..": "..value) end
+  -- for key,value in pairs(commandArray) do print(key..": "..value) end
   return commandArray
 end
 

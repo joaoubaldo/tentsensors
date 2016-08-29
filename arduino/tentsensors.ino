@@ -14,7 +14,7 @@ Gateway and Sensor Node (no radio needed) with the following childs:
 #define MY_GATEWAY_SERIAL
 
 #include <SPI.h>
-#include <MySensor.h>
+#include <MySensors.h>
 #include <DHT.h>
 
 #include "version.h"
@@ -26,7 +26,7 @@ Gateway and Sensor Node (no radio needed) with the following childs:
 #define CHILD_ID_TEMP2 13
 #define CHILD_ID_RELAY1 14
 #define CHILD_ID_RELAY2 15
-#define CHILD_ID_RELAY3 16
+#define CHILD_ID_RELAY3 16  // Extrator
 #define CHILD_ID_LED 17
 #define CHILD_ID_RELAY4 18
 
@@ -36,7 +36,7 @@ Gateway and Sensor Node (no radio needed) with the following childs:
 #define LED_PIN 5
 #define RELAY1_PIN 6
 #define RELAY2_PIN 7
-#define RELAY3_PIN 8
+#define RELAY3_PIN 10  // Extractor (original pin: 8)
 #define RELAY4_PIN 9
 
 DHT dht;
@@ -99,6 +99,8 @@ void setup() {
   dht2.setup(HUMIDITY_SENSOR_DIGITAL_PIN2);
 
   setupInitialPinsState();
+  wait(2000);
+  requestAllStates();
 }
 
 void presentation() {
@@ -115,19 +117,19 @@ void presentation() {
   present(CHILD_ID_LED, S_LIGHT);
 
   metric = getConfig().isMetric;
-  wait(2000);
-  requestAllStates();
-  wait(2000);
+  //wait(2000);
+  //requestAllStates();
+  //wait(2000);
 }
 
 void loop() {
-  if (millis() - lastSendFailTimer > 10000) {
+  /*if (millis() - lastSendFailTimer > 10000) {
     if (sendFailCount - lastSendFailCount > 5) {
       asm volatile ("  jmp 0");
     }
     lastSendFailCount = sendFailCount;
     lastSendFailTimer = millis();
-  }
+  }*/
 
   //requestAllStates();
   readHumTemp();
