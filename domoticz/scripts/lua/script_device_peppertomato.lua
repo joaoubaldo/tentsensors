@@ -9,15 +9,18 @@ TempHumInside = 'TempHumInside'
 LED = 'LED'
 Fan = 'Fan'
 Resistor = 'Resistor'
+Humidifier = 'Humidifier'
 Extractor = 'Extractor'
 AutoControl = 'AutoControl'
 HPS = 'HPS'
-ResistorAlwaysOn = false
-FanAlwaysOnDay = false
 
-DayStart = 17
-DayEnd = 10
+DayStart = 16
+DayEnd = 7
 
+NightTargetTemp = 22.0
+DayTargetTemp = 26.0
+NightTargetHum = 62
+DayTargetHum = 62
 --
 -- Utility functions
 --
@@ -56,14 +59,26 @@ end
 -- turn device off
 function turn_off(device)
   if otherdevices[device] == 'On' then
-	commandArray[device] = 'Off'
+	   commandArray[device] = 'Off'
+  end
+end
+
+function turn_off_no_flapping(device, flap_seconds)
+  if otherdevices[device] == 'On' and time_since_update(device) > flap_seconds then
+	   commandArray[device] = 'Off'
   end
 end
 
 -- turn device on
 function turn_on(device)
   if otherdevices[device] == 'Off' then
-	commandArray[device] = 'On'
+	   commandArray[device] = 'On'
+  end
+end
+
+function turn_on_no_flapping(device, flap_seconds)
+  if otherdevices[device] == 'Off' and time_since_update(device) > flap_seconds then
+	   commandArray[device] = 'On'
   end
 end
 
@@ -103,53 +118,94 @@ function toggle_every_x_seconds(device, x)
   end
 end
 
--- run logic
-function run_logic()
-  temp = otherdevices_temperature[TempHumInside]
+-- P(roportional) Controller
+-- kP - P multiplier
+-- reading - input value
+-- sp - set point (wanted value)
+function update_p(kP, reading, sp)
+  return (sp-reading)*kP
+end
 
-  -- toggle resistor based on temperature
-  if ResistorAlwaysOn then
-	turn_on(Resistor)
-  else
-    x = 28.0
-    y = 30.0
-    if (temp >= y) then
-      turn_off(Resistor)
-    elseif (temp <= x) then
-      turn_on(Resistor)
-    end
+function is_between(value, left, right)
+  if value >= left and value <= right then
+    return true
+  end
+  return false
+end
+
+--
+-- logic
+--
+
+function day_logic()
+  temp = otherdevices_temperature[TempHumOutside]
+  hum = otherdevices_humidity[TempHumOutside]
+
+  turn_on(HPS)
+
+  temp_error = update_p(1.0, temp, DayTargetTemp)
+  flap_interval = 60
+
+  if is_between(temp_error, 0.51, 9999.00) then
+    turn_on_no_flapping(Resistor, flap_interval)
+    turn_on_every_x_for_y(Extractor, 600, 120)
+    turn_off_no_flapping(Fan, flap_interval)
+  elseif is_between(temp_error, -0.50, 0.50) then
+    turn_on_every_x_for_y(Extractor, 600, 120)
+    turn_on_every_x_for_y(Fan, 1600, 300)
+    turn_off_no_flapping(Resistor, flap_interval)
+  elseif is_between(temp_error, -9999.00, -0.51) then
+    --turn_on_every_x_for_y(Extractor, 500, 120)
+    turn_on_no_flapping(Extractor, flap_interval)
+    turn_on_every_x_for_y(Fan, 1600, 300)
+    turn_off_no_flapping(Resistor, flap_interval)
   end
 
+
+  hum_error = update_p(1.0, hum, DayTargetHum)
+  if hum_error >= 10 then
+    turn_on_no_flapping(Humidifier, flap_interval)
+  elseif hum_error <= -10 then
+   turn_off_no_flapping(Humidifier, flap_interval)
+  end
+end
+
+
+function night_logic()
+  temp = otherdevices_temperature[TempHumOutside]
+
+  turn_off(HPS)
+
+  temp_error = update_p(1.0, temp, NightTargetTemp)
+  flap_interval = 20
+
+  turn_on_every_x_for_y(Fan, 4300, 60)
+
+  if is_between(temp_error, 0.51, 9999.00) then -- below sp (inferior temp)
+    turn_on_no_flapping(Resistor, flap_interval)
+    turn_on_every_x_for_y(Extractor, 1200, 60)
+  elseif is_between(temp_error, -0.50, 0.50) then -- optimal
+    turn_on_every_x_for_y(Extractor, 900, 60)
+    turn_off_no_flapping(Resistor, flap_interval)
+  elseif is_between(temp_error, -9999.00, -0.51) then -- above sp
+    turn_on_every_x_for_y(Extractor, 600, 60)
+    turn_off_no_flapping(Resistor, flap_interval)
+  end
+end
+
+-- run logic
+function run_logic()
 
   -- toggle air flow based on time of day
   hour = os.date("*t")["hour"]
   if DayStart > DayEnd then
     if (hour >= DayStart or hour < DayEnd) then
       -- day
-      if FanAlwaysOnDay then
-        turn_on(Fan)
-      else
-        turn_on_every_x_for_y(Fan, 3600, 330)
-      end
-      turn_on_every_x_for_y(Extractor, 3600, 2000)
-      turn_on(HPS)
-    elseif hour >= DayEnd and hour < DayStart then  
+      day_logic()
+    elseif hour >= DayEnd and hour < DayStart then
       -- night
-      turn_off(HPS)
-      turn_on_every_x_for_y(Extractor, 3600, 1000)
-      turn_on_every_x_for_y(Fan, 3600, 120)
+      night_logic()
     end
-  end
-
-
-  -- toggle air intake/outtake if temp is high/low
-  high = 32.0
-  low = 30.0
-  if true then
-          if temp >= high then
-            -- turn_on(Fan)
-            turn_on(Extractor)
-          end
   end
 
   -- print commands
@@ -161,4 +217,3 @@ end
 if otherdevices[AutoControl] == 'On' then
   run_logic()
 end
-

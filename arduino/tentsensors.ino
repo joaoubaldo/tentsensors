@@ -29,6 +29,7 @@ Gateway and Sensor Node (no radio needed) with the following childs:
 #define CHILD_ID_RELAY3 16  // Extrator
 #define CHILD_ID_LED 17
 #define CHILD_ID_RELAY4 18
+#define CHILD_ID_RELAY5 19
 
 /* Pins */
 #define HUMIDITY_SENSOR_DIGITAL_PIN 4
@@ -38,6 +39,7 @@ Gateway and Sensor Node (no radio needed) with the following childs:
 #define RELAY2_PIN 7
 #define RELAY3_PIN 10  // Extractor (original pin: 8)
 #define RELAY4_PIN 9
+#define RELAY5_PIN 11
 
 DHT dht;
 DHT dht2;
@@ -52,6 +54,7 @@ MyMessage msgRelay1(CHILD_ID_RELAY1, V_LIGHT);
 MyMessage msgRelay2(CHILD_ID_RELAY2, V_LIGHT);
 MyMessage msgRelay3(CHILD_ID_RELAY3, V_LIGHT);
 MyMessage msgRelay4(CHILD_ID_RELAY4, V_LIGHT);
+MyMessage msgRelay5(CHILD_ID_RELAY5, V_LIGHT);
 MyMessage msgLed(CHILD_ID_LED, V_LIGHT);
 
 /* Control variables */
@@ -78,7 +81,10 @@ void setupInitialPinsState() {
   digitalWrite(RELAY3_PIN, HIGH);
   pinMode(RELAY4_PIN, OUTPUT);
   digitalWrite(RELAY4_PIN, HIGH);
+  pinMode(RELAY5_PIN, OUTPUT);
+  digitalWrite(RELAY5_PIN, HIGH);
 
+ 
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, LOW);
 }
@@ -89,6 +95,7 @@ void requestAllStates() {
     request(CHILD_ID_RELAY2, V_LIGHT);
     request(CHILD_ID_RELAY3, V_LIGHT);
     request(CHILD_ID_RELAY4, V_LIGHT);
+    request(CHILD_ID_RELAY5, V_LIGHT);
     request(CHILD_ID_LED, V_LIGHT);
     lastStateRefresh = millis();
   //}
@@ -105,16 +112,27 @@ void setup() {
 
 void presentation() {
   sendSketchInfo("TentSensors", VERSION);
-
+  wait(200);
   present(CHILD_ID_HUM, S_HUM);
+  wait(200);
   present(CHILD_ID_TEMP, S_TEMP);
+  wait(200);
   present(CHILD_ID_HUM2, S_HUM);
+  wait(200);
   present(CHILD_ID_TEMP2, S_TEMP);
+  wait(200);
   present(CHILD_ID_RELAY1, S_LIGHT);
+  wait(200);
   present(CHILD_ID_RELAY2, S_LIGHT);
+  wait(200);
   present(CHILD_ID_RELAY3, S_LIGHT);
+  wait(200);
   present(CHILD_ID_RELAY4, S_LIGHT);
+  wait(200);
+  present(CHILD_ID_RELAY5, S_LIGHT);
+  wait(200);
   present(CHILD_ID_LED, S_LIGHT);
+  wait(200);
 
   metric = getConfig().isMetric;
   //wait(2000);
@@ -149,6 +167,9 @@ void receive(const MyMessage & message) {
   } else if (message.type == V_LIGHT && message.sensor == CHILD_ID_RELAY4) {
     digitalWrite(RELAY4_PIN, !message.getBool());
     send(msgRelay4.set(message.getBool() ? 1:0));
+  } else if (message.type == V_LIGHT && message.sensor == CHILD_ID_RELAY5) {
+    digitalWrite(RELAY5_PIN, !message.getBool());
+    send(msgRelay5.set(message.getBool() ? 1:0));
   } else if (message.type == V_LIGHT && message.sensor == CHILD_ID_LED) {
     digitalWrite(LED_PIN, message.getBool());
     send(msgLed.set(message.getBool() ? 1:0));
