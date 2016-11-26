@@ -14,13 +14,19 @@ Extractor = 'Extractor'
 AutoControl = 'AutoControl'
 HPS = 'HPS'
 
-DayStart = 16
-DayEnd = 7
+DayStart = uservariables['DayStart']
+DayEnd = uservariables['DayEnd']
+DayStart = (DayStart ~= nil and DayStart or 16)
+DayEnd = (DayEnd ~= nil and DayEnd or 7)
 
-NightTargetTemp = 22.0
-DayTargetTemp = 26.0
-NightTargetHum = 62
-DayTargetHum = 62
+NightTargetTemp = uservariables['NightTargetTemp']
+DayTargetTemp = uservariables['DayTargetTemp']
+NightTargetHum = uservariables['NightTargetHum']
+DayTargetHum = uservariables['DayTargetHum']
+NightTargetTemp = (NightTargetTemp ~= nil and NightTargetTemp or 22.0)
+DayTargetTemp = (DayTargetTemp ~= nil and DayTargetTemp or 25.0)
+NightTargetHum = (NightTargetHum ~= nil and NightTargetHum or 55.0)
+DayTargetHum = (DayTargetHum ~= nil and DayTargetHum or 75.0)
 --
 -- Utility functions
 --
@@ -59,26 +65,26 @@ end
 -- turn device off
 function turn_off(device)
   if otherdevices[device] == 'On' then
-	   commandArray[device] = 'Off'
+           commandArray[device] = 'Off'
   end
 end
 
 function turn_off_no_flapping(device, flap_seconds)
   if otherdevices[device] == 'On' and time_since_update(device) > flap_seconds then
-	   commandArray[device] = 'Off'
+           commandArray[device] = 'Off'
   end
 end
 
 -- turn device on
 function turn_on(device)
   if otherdevices[device] == 'Off' then
-	   commandArray[device] = 'On'
+           commandArray[device] = 'On'
   end
 end
 
 function turn_on_no_flapping(device, flap_seconds)
   if otherdevices[device] == 'Off' and time_since_update(device) > flap_seconds then
-	   commandArray[device] = 'On'
+           commandArray[device] = 'On'
   end
 end
 
@@ -152,20 +158,20 @@ function day_logic()
     turn_off_no_flapping(Fan, flap_interval)
   elseif is_between(temp_error, -0.50, 0.50) then
     turn_on_every_x_for_y(Extractor, 600, 120)
-    turn_on_every_x_for_y(Fan, 1600, 300)
+    turn_on_every_x_for_y(Fan, 1600, 900)
     turn_off_no_flapping(Resistor, flap_interval)
   elseif is_between(temp_error, -9999.00, -0.51) then
     --turn_on_every_x_for_y(Extractor, 500, 120)
     turn_on_no_flapping(Extractor, flap_interval)
-    turn_on_every_x_for_y(Fan, 1600, 300)
+    turn_on_every_x_for_y(Fan, 1600, 900)
     turn_off_no_flapping(Resistor, flap_interval)
   end
 
 
   hum_error = update_p(1.0, hum, DayTargetHum)
-  if hum_error >= 10 then
+  if hum_error >= 5 then
     turn_on_no_flapping(Humidifier, flap_interval)
-  elseif hum_error <= -10 then
+  elseif hum_error <= -5 then
    turn_off_no_flapping(Humidifier, flap_interval)
   end
 end
@@ -173,6 +179,7 @@ end
 
 function night_logic()
   temp = otherdevices_temperature[TempHumOutside]
+  hum = otherdevices_humidity[TempHumOutside]
 
   turn_off(HPS)
 
@@ -191,6 +198,14 @@ function night_logic()
     turn_on_every_x_for_y(Extractor, 600, 60)
     turn_off_no_flapping(Resistor, flap_interval)
   end
+
+  hum_error = update_p(1.0, hum, NightTargetHum)
+  if hum_error >= 5 then
+    turn_on_no_flapping(Humidifier, flap_interval)
+  elseif hum_error <= -5 then
+   turn_off_no_flapping(Humidifier, flap_interval)
+  end
+
 end
 
 -- run logic
@@ -217,3 +232,4 @@ end
 if otherdevices[AutoControl] == 'On' then
   run_logic()
 end
+

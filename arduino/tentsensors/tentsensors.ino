@@ -35,10 +35,10 @@ Gateway and Sensor Node (no radio needed) with the following childs:
 #define HUMIDITY_SENSOR_DIGITAL_PIN 4
 #define HUMIDITY_SENSOR_DIGITAL_PIN2 3
 #define LED_PIN 5
-#define RELAY1_PIN 6
+#define RELAY1_PIN 9
 #define RELAY2_PIN 7
 #define RELAY3_PIN 10  // Extractor (original pin: 8)
-#define RELAY4_PIN 9
+#define RELAY4_PIN 6
 #define RELAY5_PIN 11
 
 DHT dht;
