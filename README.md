@@ -4,13 +4,21 @@
 
 TentSensors is the software component of a smart greenhouse
 project. The code relies on MySensors library and implements a local
-Gateway and Sensor Node (no radio needed) with the following childs:
-
-* 4x relays
-* 1x led
-* 2x DHT temperature & humidity sensors
+Gateway and Sensor Node.
 
 ## Requirements
 
-* See MySensors documentation for details but as of now only an Arduino Nano (328p) was used.
-* MySensors Arduino library must be installed
+* Arduino Nano (328p)
+* MySensors 2.1.1
+* DHT lib for Arduino
+* platformio
+
+## Building and uploading
+
+  platformio init  
+  platformio run
+  platformio run -t upload
+
+## Monitor device
+
+  platformio device monitor -b 115200

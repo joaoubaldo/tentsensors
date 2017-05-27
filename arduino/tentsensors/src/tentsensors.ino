@@ -1,14 +1,11 @@
 /*
-Title: TentSensors
+Title: TentSensors 2
 Author: Joao Coutinho <me joaoubaldo.com>
 Git: https://github.com/joaoubaldo/tentsensors
 
 Description: TentSensors is the software component of a smart greenhouse
 project. The code relies on MySensors library and implements a local
-Gateway and Sensor Node (no radio needed) with the following childs:
-3x relays
-1x led
-2x DHT temperature & humidity sensors
+Gateway and Sensor Node.
 */
 
 #define MY_GATEWAY_SERIAL
@@ -26,7 +23,7 @@ Gateway and Sensor Node (no radio needed) with the following childs:
 #define CHILD_ID_TEMP2 13
 #define CHILD_ID_RELAY1 14
 #define CHILD_ID_RELAY2 15
-#define CHILD_ID_RELAY3 16  // Extrator
+#define CHILD_ID_RELAY3 16 
 #define CHILD_ID_LED 17
 #define CHILD_ID_RELAY4 18
 #define CHILD_ID_RELAY5 19
@@ -37,7 +34,7 @@ Gateway and Sensor Node (no radio needed) with the following childs:
 #define LED_PIN 5
 #define RELAY1_PIN 9
 #define RELAY2_PIN 7
-#define RELAY3_PIN 10  // Extractor (original pin: 8)
+#define RELAY3_PIN 10
 #define RELAY4_PIN 6
 #define RELAY5_PIN 11
 
@@ -50,12 +47,12 @@ MyMessage msgHum(CHILD_ID_HUM, V_HUM);
 MyMessage msgHum2(CHILD_ID_HUM2, V_HUM);
 MyMessage msgTemp(CHILD_ID_TEMP, V_TEMP);
 MyMessage msgTemp2(CHILD_ID_TEMP2, V_TEMP);
-MyMessage msgRelay1(CHILD_ID_RELAY1, V_LIGHT);
-MyMessage msgRelay2(CHILD_ID_RELAY2, V_LIGHT);
-MyMessage msgRelay3(CHILD_ID_RELAY3, V_LIGHT);
-MyMessage msgRelay4(CHILD_ID_RELAY4, V_LIGHT);
-MyMessage msgRelay5(CHILD_ID_RELAY5, V_LIGHT);
-MyMessage msgLed(CHILD_ID_LED, V_LIGHT);
+MyMessage msgRelay1(CHILD_ID_RELAY1, V_STATUS);
+MyMessage msgRelay2(CHILD_ID_RELAY2, V_STATUS);
+MyMessage msgRelay3(CHILD_ID_RELAY3, V_STATUS);
+MyMessage msgRelay4(CHILD_ID_RELAY4, V_STATUS);
+MyMessage msgRelay5(CHILD_ID_RELAY5, V_STATUS);
+MyMessage msgLed(CHILD_ID_LED, V_STATUS);
 
 /* Control variables */
 unsigned long dhtTimer[2] = {0, 0};  // used to control read frequency
@@ -91,12 +88,12 @@ void setupInitialPinsState() {
 
 void requestAllStates() {
   //if ((millis() - lastStateRefresh) >= stateRefreshInterval) {
-    request(CHILD_ID_RELAY1, V_LIGHT);
-    request(CHILD_ID_RELAY2, V_LIGHT);
-    request(CHILD_ID_RELAY3, V_LIGHT);
-    request(CHILD_ID_RELAY4, V_LIGHT);
-    request(CHILD_ID_RELAY5, V_LIGHT);
-    request(CHILD_ID_LED, V_LIGHT);
+    request(CHILD_ID_RELAY1, V_STATUS);
+    request(CHILD_ID_RELAY2, V_STATUS);
+    request(CHILD_ID_RELAY3, V_STATUS);
+    request(CHILD_ID_RELAY4, V_STATUS);
+    request(CHILD_ID_RELAY5, V_STATUS);
+    request(CHILD_ID_LED, V_STATUS);
     lastStateRefresh = millis();
   //}
 }
@@ -133,44 +130,29 @@ void presentation() {
   wait(200);
   present(CHILD_ID_LED, S_LIGHT);
   wait(200);
-
-  metric = getConfig().isMetric;
-  //wait(2000);
-  //requestAllStates();
-  //wait(2000);
 }
 
 void loop() {
-  /*if (millis() - lastSendFailTimer > 10000) {
-    if (sendFailCount - lastSendFailCount > 5) {
-      asm volatile ("  jmp 0");
-    }
-    lastSendFailCount = sendFailCount;
-    lastSendFailTimer = millis();
-  }*/
-
-  //requestAllStates();
   readHumTemp();
 }
 
 void receive(const MyMessage & message) {
-  //Serial.println("INCOMING MESSAGE");
-  if (message.type == V_LIGHT && message.sensor == CHILD_ID_RELAY1) {
+  if (message.type == V_STATUS && message.sensor == CHILD_ID_RELAY1) {
     digitalWrite(RELAY1_PIN, !message.getBool());
     send(msgRelay1.set(message.getBool() ? 1:0));
-  } else if (message.type == V_LIGHT && message.sensor == CHILD_ID_RELAY2) {
+  } else if (message.type == V_STATUS && message.sensor == CHILD_ID_RELAY2) {
     digitalWrite(RELAY2_PIN, !message.getBool());
     send(msgRelay2.set(message.getBool() ? 1:0));
-  } else if (message.type == V_LIGHT && message.sensor == CHILD_ID_RELAY3) {
+  } else if (message.type == V_STATUS && message.sensor == CHILD_ID_RELAY3) {
     digitalWrite(RELAY3_PIN, !message.getBool());
     send(msgRelay3.set(message.getBool() ? 1:0));
-  } else if (message.type == V_LIGHT && message.sensor == CHILD_ID_RELAY4) {
+  } else if (message.type == V_STATUS && message.sensor == CHILD_ID_RELAY4) {
     digitalWrite(RELAY4_PIN, !message.getBool());
     send(msgRelay4.set(message.getBool() ? 1:0));
-  } else if (message.type == V_LIGHT && message.sensor == CHILD_ID_RELAY5) {
+  } else if (message.type == V_STATUS && message.sensor == CHILD_ID_RELAY5) {
     digitalWrite(RELAY5_PIN, !message.getBool());
     send(msgRelay5.set(message.getBool() ? 1:0));
-  } else if (message.type == V_LIGHT && message.sensor == CHILD_ID_LED) {
+  } else if (message.type == V_STATUS && message.sensor == CHILD_ID_LED) {
     digitalWrite(LED_PIN, message.getBool());
     send(msgLed.set(message.getBool() ? 1:0));
   }
@@ -189,8 +171,6 @@ void readHumTemp() {
         }
         if (!send(tempMsgs[i]->set(temperature, 1)))
           sendFailCount++;
-        //Serial.print("Free SRAM: ");
-        //Serial.println(freeRam(), DEC);
       }
 
       if (isnan(humidity)) {
@@ -202,8 +182,6 @@ void readHumTemp() {
             sendFailCount++;
       }
 
-      //Serial.print("sendFailCount: ");
-      //Serial.println(sendFailCount);
       dhtTimer[i] = millis();
     }
   }
