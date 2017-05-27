@@ -16,7 +16,7 @@ Gateway and Sensor Node.
 ## Building and uploading
 
   platformio init  
-  platformio run
+  platformio run  
   platformio run -t upload
 
 ## Monitor device

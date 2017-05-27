@@ -94,8 +94,12 @@ def toggle(gw, device):
 
 def day_logic(gw):
     now = datetime.now()
-    if not last_update('Extractor') or (now - last_update('Extractor')) >= timedelta(seconds=5):
+    if not last_update('Extractor') or (now - last_update('Extractor')) >= timedelta(minutes=30):
         toggle(gw, 'Extractor')
+
+    if not last_update('Fan') or (now - last_update('Fan')) >= timedelta(minutes=15):
+        toggle(gw, 'Fan')
+
 
 
 def night_logic(gw):
