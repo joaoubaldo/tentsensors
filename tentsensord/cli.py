@@ -19,12 +19,14 @@ from tentsensord import operations
 
 logic = None
 
+
 def child_name_by_id(id_):
     """ get device name by id """
     for k, v in common.config['child_map'].items():
         if v == int(id_):
             return k
     return None
+
 
 def update_child_state(child_id, value, message=None):
     """ set device value. update timestamp and persist current_state. """
@@ -43,7 +45,8 @@ def update_child_state(child_id, value, message=None):
         with open(common.config['persist_file'], 'w') as f:
             f.write(json.dumps(common.current_state, default=json_serial))
 
-def event(message):
+
+def message_handler(message):
     """ mysensors event handler """
     gw = message.gateway
     command = message.type
@@ -58,15 +61,17 @@ def event(message):
     elif command == MessageType.set:
         update_child_state(None, None, message)
 
+
 def json_serial(obj):
     """JSON serializer for objects not serializable by default json code"""
 
     if isinstance(obj, datetime):
         serial = obj.isoformat()
         return serial
-    raise TypeError ("Type not serializable")
+    raise TypeError("Type not serializable")
 
-def load_logic():
+
+def load_logic_module():
     """ load or reload logic module from file path. """
     global logic
     try:
@@ -78,37 +83,31 @@ def load_logic():
             common.gw_thread.stop()
         raise
 
-def load_config(config_dict=None):
-    """ load config file. if config_dict is not None, its contents are used
-    instead of reading file common.config_file """
-
-    """ TODO: protect against changes to some attributes """
-    if not config_dict and len(common.config_file) > 0:
-        common.config = json.load(open(common.config_file, 'r'))
-    elif config_dict:
-        common.config = config_dict
 
 def sighup_handler(signum, frame):
     """ reload configuration file and logic module """
     try:
-        load_config()
-        load_logic()
+        common.load_config()
+        load_logic_module()
         print('SIGHUP: Reloading config from', common.config_file)
     except Exception:
         common.gw_thread.stop()
         raise
 
+
 def sigterm_handler(signum, frame):
     print('SIGTERM: stopping...')
     common.gw_thread.stop()
+
 
 def main(config_dict=None):
     if len(sys.argv) != 2:
         print("Usage: %s <config file>" % (sys.argv[0],))
         sys.exit(2)
 
+    """ load common.config_file """
     common.config_file = sys.argv[1]
-    load_config()
+    common.load_config()
 
     """ setup posix signal handling """
     signal.signal(signal.SIGHUP, sighup_handler)
@@ -118,17 +117,16 @@ def main(config_dict=None):
     for device in common.config['child_map'].values():
         update_child_state(device, 0)
 
-    load_logic()
+    load_logic_module()
 
-    """ open the serial interface """
-    common.gw_thread = mysensors.SerialGateway(
-            common.config["device"], event, protocol_version='1.5',
-            baud=common.config["baud_rate"])
+    """ open the serial interface and start gw thread """
+    common.init_gw_thread(message_handler)
     common.gw_thread.start()
 
     """ give a few seconds for gw to startup """
     time.sleep(5)
 
+    """ run logic while gw is active """
     while common.gw_thread.is_alive():
         logic.run()
         time.sleep(common.config['loop_sleep'])

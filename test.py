@@ -30,7 +30,7 @@ config_content = """
 def mock_gw():
     from tentsensord import common
     from tentsensord.cli import update_child_state
-    
+
     class MockedGw:
         def set_child_value(self, sensor_id, child_id, value_type, value,
                             **kwargs):
@@ -46,20 +46,20 @@ class MissingLogicFileTestCase(unittest.TestCase):
         mock_gw()
 
     def test(self):
-        from tentsensord.cli import load_logic
-        from tentsensord.cli import load_config
+        from tentsensord.cli import load_logic_module
+        from tentsensord.common import load_config
         import json
 
         load_config(json.loads(config_content))
-        self.assertRaises(FileNotFoundError, load_logic)
+        self.assertRaises(FileNotFoundError, load_logic_module)
 
 class MissingConfigFileTestCase(unittest.TestCase):
     def setUp(self):
         mock_gw()
 
     def test(self):
-        from tentsensord.cli import load_logic
-        from tentsensord.cli import load_config
+        from tentsensord.cli import load_logic_module
+        from tentsensord.common import load_config
         from tentsensord import common
 
         common.config_file = 'invalid_file'
@@ -71,7 +71,7 @@ class ChildStateUpdateTestCase(unittest.TestCase):
 
     def test(self):
         from tentsensord.cli import update_child_state
-        from tentsensord.cli import load_config
+        from tentsensord.common import load_config
         from tentsensord import common
         import json
 
@@ -86,7 +86,7 @@ class GetChildByIdTestCase(unittest.TestCase):
         mock_gw()
 
     def test_get_child_name_by_id(self):
-        from tentsensord.cli import load_config
+        from tentsensord.common import load_config
         from tentsensord.cli import child_name_by_id
         from tentsensord import common
         import json
@@ -101,7 +101,7 @@ class DeviceToggleTestCase(unittest.TestCase):
         mock_gw()
 
     def test_device_toggle(self):
-        from tentsensord.cli import load_config
+        from tentsensord.common import load_config
         from tentsensord.cli import child_name_by_id
         from tentsensord import common
         from tentsensord import operations

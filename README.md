@@ -13,26 +13,25 @@ Gateway and Sensor Node.
 * DHT lib for Arduino
 * platformio
 
-## Building and uploading
+## Arduino code
 
-### Arduino code
+### Building and uploading
   platformio init  
   platformio run  
   platformio run -t upload
 
-### Service
+### Monitor device
+  platformio device monitor -b 115200
 
-#### Run tests
+## Service
+
+### Run tests
   nosetests
   pylint tentsensord
   pep8 tentsensord
 
-#### Test locally
+### Test locally
   python setup.py develop
 
-#### Install
+### Install
   python setup.py install
-
-## Monitor device
-
-  platformio device monitor -b 115200
