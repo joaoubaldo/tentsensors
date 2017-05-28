@@ -13,19 +13,17 @@ from mysensors.const_20 import MessageType
 from mysensors.const_20 import Presentation
 from mysensors.const_20 import SetReq
 from mysensors.const_20 import Internal
+import cherrypy
 
 from tentsensord import common
 from tentsensord import operations
+from tentsensord.utils import child_name_by_id
+from tentsensord.utils import json_serial
+from tentsensord.httpservices import DeviceWebService
+from tentsensord.httpservices import ControlWebService
+
 
 logic = None
-
-
-def child_name_by_id(id_):
-    """ get device name by id """
-    for k, v in common.config['child_map'].items():
-        if v == int(id_):
-            return k
-    return None
 
 
 def update_child_state(child_id, value, message=None):
@@ -60,15 +58,6 @@ def message_handler(message):
                                   message.sub_type))
     elif command == MessageType.set:
         update_child_state(None, None, message)
-
-
-def json_serial(obj):
-    """JSON serializer for objects not serializable by default json code"""
-
-    if isinstance(obj, datetime):
-        serial = obj.isoformat()
-        return serial
-    raise TypeError("Type not serializable")
 
 
 def load_logic_module():
@@ -112,6 +101,7 @@ def main(config_dict=None):
     """ setup posix signal handling """
     signal.signal(signal.SIGHUP, sighup_handler)
     signal.signal(signal.SIGTERM, sigterm_handler)
+    print("Registered signal handlers")
 
     """ set children initial state """
     for device in common.config['child_map'].values():
@@ -122,14 +112,32 @@ def main(config_dict=None):
     """ open the serial interface and start gw thread """
     common.init_gw_thread(message_handler)
     common.gw_thread.start()
+    print("Mysensors gateway started")
 
     """ give a few seconds for gw to startup """
+    print("Sleeping for a few seconds")
     time.sleep(5)
+
+    """ start http interface """
+    conf = {
+        '/': {
+            'request.dispatch': cherrypy.dispatch.MethodDispatcher()
+        }
+    }
+    cherrypy.tree.mount(DeviceWebService(), '/device', conf)
+    cherrypy.tree.mount(ControlWebService(), '/control', conf)
+    cherrypy.engine.start()
+    print("Started HTTP interface")
 
     """ run logic while gw is active """
     while common.gw_thread.is_alive():
-        logic.run()
+        if common.logic_enabled:
+            logic.run()
         time.sleep(common.config['loop_sleep'])
+
+    """ clean up """
+    print("Cleaning up")
+    cherrypy.engine.stop()
 
 
 if __name__ == '__main__':

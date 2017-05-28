@@ -1,1 +1,2 @@
 pymysensors==0.10.0
+cherrypy==10.2.2
