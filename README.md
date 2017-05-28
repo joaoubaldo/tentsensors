@@ -15,9 +15,23 @@ Gateway and Sensor Node.
 
 ## Building and uploading
 
+### Arduino code
   platformio init  
   platformio run  
   platformio run -t upload
+
+### Service
+
+#### Run tests
+  nosetests
+  pylint tentsensord
+  pep8 tentsensord
+
+#### Test locally
+  python setup.py develop
+
+#### Install
+  python setup.py install
 
 ## Monitor device
 
