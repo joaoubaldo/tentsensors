@@ -8,7 +8,6 @@ def is_day(now=None):
     if not now:
         now = datetime.now()
 
-    print(common.config)
     start = common.config['vars']['day_start']
     end = common.config['vars']['day_end']
 

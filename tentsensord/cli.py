@@ -58,6 +58,15 @@ def message_handler(message):
                                   message.sub_type))
     elif command == MessageType.set:
         update_child_state(None, None, message)
+    elif command == MessageType.req:
+        print("child %s state requested. type: %s" % (message.child_id,
+                                                      type_))
+        name = child_name_by_id(message.child_id)
+        value = common.current_state[]
+        if value == '1':
+            operations.turn_on(name)
+        elif value == '0':
+            operations.turn_off(name)
 
 
 def load_logic_module():
