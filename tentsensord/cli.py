@@ -113,10 +113,6 @@ def main(config_dict=None):
     signal.signal(signal.SIGTERM, sigterm_handler)
     print("Registered signal handlers")
 
-    """ set children initial state """
-    for device in common.config['child_map'].values():
-        update_child_state(device, 0)
-
     load_logic_module()
 
     """ open the serial interface and start gw thread """
@@ -129,11 +125,15 @@ def main(config_dict=None):
     time.sleep(5)
 
     """ set children initial state """
-    for device, value in common.current_state.items():
-        if value == '1':
-            operations.turn_on(device)
-        if value == '0':
+    for device in common.config['child_map'].keys():
+        if device not in common.current_state:
             operations.turn_off(device)
+        else:
+            value = common.current_state[device]['value']
+            if value == '1':
+                operations.turn_on(device)
+            if value == '0':
+                operations.turn_off(device)
 
 
     """ start http interface """
