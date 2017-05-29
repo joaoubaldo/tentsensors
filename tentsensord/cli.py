@@ -62,7 +62,7 @@ def message_handler(message):
         print("child %s state requested. type: %s" % (message.child_id,
                                                       type_))
         name = child_name_by_id(message.child_id)
-        value = common.current_state[]
+        value = common.current_state[name]
         if value == '1':
             operations.turn_on(name)
         elif value == '0':
