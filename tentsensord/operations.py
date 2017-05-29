@@ -19,6 +19,8 @@ def device_value(device):
 
 def turn_on(device):
     """ use the gateway to turn the device on """
+    if device_value(device) == '1':
+        return
     print("turn on", device)
     common.gw_thread.set_child_value(
         0, common.config['child_map'][device], 2, 1)
@@ -26,6 +28,8 @@ def turn_on(device):
 
 def turn_off(device):
     """ use the gateway to turn the device off """
+    if device_value(device) == '0':
+        return
     print("turn off", device)
     common.gw_thread.set_child_value(
         0, common.config['child_map'][device], 2, 0)

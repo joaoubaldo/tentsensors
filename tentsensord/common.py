@@ -12,6 +12,7 @@ gw_thread = None
 
 logic_enabled = True
 
+
 def init_gw_thread(event_handler):
     global gw_thread
     gw_thread = mysensors.SerialGateway(
