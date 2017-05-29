@@ -4,9 +4,10 @@ from datetime import timedelta
 from tentsensord import operations
 from tentsensord import common
 
+
 def is_day(now=None):
     if not now:
-        now = datetime.now()
+        now = datetime.utcnow()
 
     start = common.config['vars']['day_start']
     end = common.config['vars']['day_end']
@@ -18,7 +19,7 @@ def is_day(now=None):
 
 
 def day_logic():
-    now = datetime.now()
+    now = datetime.utcnow()
     if not operations.last_update('Extractor') or \
     (now - operations.last_update('Extractor')) >= timedelta(minutes=30):
         operations.toggle('Extractor')
@@ -29,7 +30,7 @@ def day_logic():
 
 
 def night_logic():
-    now = datetime.now()
+    now = datetime.utcnow()
     if not operations.last_update('Extractor') or \
     (now - operations.last_update('Extractor')) >= timedelta(minutes=30):
         operations.toggle('Extractor')

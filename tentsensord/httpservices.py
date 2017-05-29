@@ -17,10 +17,10 @@ class DeviceWebService(object):
 
         if not device_name or device_name not in common.current_state:
             return json.dumps(common.current_state,
-                default=json_serial).encode('utf8')
+                              default=json_serial).encode('utf8')
 
         return json.dumps(common.current_state[device_name],
-            default=json_serial).encode('utf8')
+                          default=json_serial).encode('utf8')
 
     def POST(self, device_name=None):
         cherrypy.response.status = "501 Not Implemented"

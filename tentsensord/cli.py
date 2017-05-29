@@ -14,6 +14,7 @@ from mysensors.const_20 import Presentation
 from mysensors.const_20 import SetReq
 from mysensors.const_20 import Internal
 import cherrypy
+import requests
 
 from tentsensord import common
 from tentsensord import operations
@@ -36,7 +37,7 @@ def update_child_state(child_id, value, message=None):
 
     common.current_state[child_name_by_id(child_id)] = {
         'value': str(value),
-        'last_update': datetime.now()
+        'last_update': datetime.utcnow()
     }
 
     if 'persist_file' in common.config and common.config['persist_file']:
@@ -142,6 +143,11 @@ def main(config_dict=None):
     while common.gw_thread.is_alive():
         if common.logic_enabled:
             logic.run()
+        if 'influxdb_uri' in common.config:
+            data = ''
+            for k, v in common.current_state.items():
+                data += "%s,host=localhost value=%s\n" % (k, v['value'])
+            url = "%(influxdb_uri)s/write?db=%(influxdb_db)s" % common.config
         time.sleep(common.config['loop_sleep'])
 
     """ clean up """
