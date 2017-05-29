@@ -128,6 +128,14 @@ def main(config_dict=None):
     print("Sleeping for a few seconds")
     time.sleep(5)
 
+    """ set children initial state """
+    for device, value in common.current_state.items():
+        if value == '1':
+            operations.turn_on(device)
+        if value == '0':
+            operations.turn_off(device)
+
+
     """ start http interface """
     conf = {
         '/': {
@@ -148,6 +156,7 @@ def main(config_dict=None):
             for k, v in common.current_state.items():
                 data += "%s,host=localhost value=%s\n" % (k, v['value'])
             url = "%(influxdb_uri)s/write?db=%(influxdb_db)s" % common.config
+            requests.post(url, data=data)
         time.sleep(common.config['loop_sleep'])
 
     """ clean up """
