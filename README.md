@@ -15,6 +15,9 @@ Gateway and Sensor Node.
 
 ## Arduino code
 
+Inside **extra/arduino/tentsensors/** there's the Arduino code ready to be
+used with platformio.
+
 ### Building and uploading
   platformio init  
   platformio run  
@@ -41,4 +44,3 @@ Gateway and Sensor Node.
 
 #### service
   python setup.py install
-
