@@ -29,8 +29,8 @@ used with platformio.
 ## Service
 
 ### Run tests
-  nosetests
-  pylint tentsensord
+  nosetests  
+  pylint tentsensord  
   pep8 tentsensord
 
 ### Test locally
@@ -39,7 +39,7 @@ used with platformio.
 ### Install
 
 #### influxdb
-  > curl -i -XPOST http://localhost:8086/query --data-urlencode "q=CREATE DATABASE tentsensord"
+  > curl -i -XPOST http://localhost:8086/query --data-urlencode "q=CREATE DATABASE tentsensord"  
   > curl -i -XPOST http://localhost:8086/query --data-urlencode 'q=CREATE RETENTION POLICY "default" ON "tentsensord" DURATION 30d REPLICATION 1 DEFAULT'
 
 #### service
